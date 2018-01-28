@@ -29,7 +29,7 @@ def convert_to_utf(file):
         with codecs.open(file, 'w', 'utf-8') as output:
             output.write(srt_data)
     except Exception as err:
-        wlog('Caught Exception: error converting to utf: {}'.format(err))
+        wlog('Caught Exception: error converting to utf: %s' % format(err))
         pass
 
 
@@ -41,14 +41,14 @@ def download(id, domain='xyz'):
     try:
         rmtree(MySubFolder)
     except Exception as err:
-        wlog('Caught Exception: error deleting folders: {}'.format(err))
+        wlog('Caught Exception: error deleting folders: %s' % format(err))
         pass
     mkdirs(MySubFolder)
     subtitle_list = []
     exts = [".srt", ".sub", ".str"]
     archive_file = path.join(MyTmp, 'wizdom.sub.'+id+'.zip')
     if not path.exists(archive_file):
-        urlretrieve("http://zip.wizdom.{}/".format(domain)+id+".zip", archive_file)
+        urlretrieve("http://zip.wizdom.%s/"%format(domain)+id+".zip", archive_file)
     executebuiltin(('XBMC.Extract("%s","%s")' % (archive_file, MySubFolder)).encode('utf-8'), True)
     for file_ in listdir(MySubFolder)[1]:
         ufile = file_.decode('utf-8')
@@ -82,7 +82,7 @@ def getParam(name, params):
     try:
         return unquote_plus(params[name])
     except Exception as err:
-        wlog('Caught Exception: error getting param: {}'.format(err))
+        wlog('Caught Exception: error getting param: %s' % format(err))
         pass
 
 
@@ -118,7 +118,7 @@ def SearchMovie(query, year):
     try:
         tmdb_id = int(json["results"][0]["id"])
     except Exception as err:
-        wlog('Caught Exception: error searching movie: {}'.format(err))
+        wlog('Caught Exception: error searching movie: %s' % format(err))
         return 0
 
     filename = 'wizdom.tmdb.%s.json' % (tmdb_id)
@@ -127,7 +127,7 @@ def SearchMovie(query, year):
     try:
         imdb_id = json["imdb_id"]
     except Exception:
-        wlog('Caught Exception: error searching movie: {}'.format(err))
+        wlog('Caught Exception: error searching movie: %s' % format(err))
         return 0
 
     return imdb_id
@@ -163,7 +163,7 @@ def ManualSearch(title, domain='xyz'):
             if imdb_id:
                 GetJson(str(imdb_id), 0, 0, lowercase_with_underscores(title), domain=domain)
     except Exception as err:
-        wlog('Caught Exception: error in manual search: {}'.format(err))
+        wlog('Caught Exception: error in manual search: %s' % format(err))
         pass
 
 
@@ -178,7 +178,7 @@ def get_domain():
             raise Exception
         return domain
     except Exception as err:
-        wlog('Caught Exception: error in finding domain: {}'.format(err))
+        wlog('Caught Exception: error in finding domain: %s' % format(err))
         return 'xyz'
 
 # ---- main -----
@@ -257,7 +257,7 @@ if action == 'search':
                 else:
                     imdb_id = "tt0"  # In order to show "No Subtitles Found" result => Doesn't recognize movie/episode
     except Exception as err:
-        wlog('Caught Exception: error in imdb id: {}'.format(err))        
+        wlog('Caught Exception: error in imdb id: %s' % format(err))        
         pass
 
     if imdb_id[:2] == "tt":  # Simple IMDB_ID
@@ -271,7 +271,7 @@ if action == 'search':
                 if imdb_id != '' and imdb_id != 0:
                     GetJson(str(imdb_id), item['season'], item['episode'], item['file_original_path'], domain=domain)
             except Exception as err:
-                wlog('Caught Exception: error in tv search: {}'.format(err))
+                wlog('Caught Exception: error in tv search: %s' % format(err))
                 pass
         # Search Movie by Title+Year
         else:
@@ -284,7 +284,7 @@ if action == 'search':
                 if imdb_id[:2] == "tt":
                     GetJson(imdb_id, 0, 0, item['file_original_path'], domain=domain)
             except Exception as err:
-                wlog('Caught Exception: error in movie search: {}'.format(err))
+                wlog('Caught Exception: error in movie search: %s' % format(err))
                 pass
 
     # Search Local File
@@ -314,6 +314,6 @@ elif action == 'clean':
     try:
         rmtree(MyTmp)
     except Exception as err:
-        wlog('Caught Exception: deleting tmp dir: {}'.format(err))
+        wlog('Caught Exception: deleting tmp dir: %s' % format(err))
         pass
     executebuiltin((u'Notification(%s,%s)' % (MyName, MyLang(32004))).encode('utf-8'))
