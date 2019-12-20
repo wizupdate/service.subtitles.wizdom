@@ -118,16 +118,16 @@ def searchTMDB(type, query, year):
 	filename = 'wizdom.search.tmdb.%s.%s.%s.json' % (type,lowercase_with_underscores(query), year)
 	if year > 0:
 		url = "http://api.tmdb.org/3/search/%s?api_key=%s&query=%s&year=%s&language=en" % (
-			type,tmdbKey, quote(query), year)
+			type,tmdbKey, query, year)
 	else:
 		url = "http://api.tmdb.org/3/search/%s?api_key=%s&query=%s&language=en" % (
-			type,tmdbKey, quote(query))
+			type,tmdbKey, query)
 	wlog("searchTMDB:%s" % url)
 	json = cachingJSON(filename,url)
 	try:
 		tmdb_id = int(json["results"][0]["id"])
 	except Exception as err:
-		wlog('Caught Exception: error searching movie: %s' % format(err))
+		wlog('Caught Exception: error searchTMDB: %s' % format(err))
 		return 0
 
 	filename = 'wizdom.tmdb.%s.json' % (tmdb_id)
@@ -235,7 +235,7 @@ if action == 'search':
 			item['title'] = getInfoLabel("ListItem.TVShowTitle")
 		else:
 			item['title'] = "SearchFor..."  # In order to show "No Subtitles Found" result.
-
+	
 	wlog("item:%s" % item)
 	imdb_id = 0
 	try:
@@ -266,7 +266,7 @@ if action == 'search':
 		# Search TV Show by Title
 		if item['season'] or item['episode']:
 			try:
-				imdb_id = searchTMDB("tv",quote(item['title']))
+				imdb_id = searchTMDB("tv",quote(item['title']),0)
 				wlog("Search TV IMDB:%s [%s]" % (imdb_id, item['title']))
 				if imdb_id[:2] == "tt":
 					searchByIMDB(imdb_id, item['season'], item['episode'], item['file_original_path'])
@@ -314,7 +314,7 @@ elif action == 'download':
 
 	# Upload AP
 	try:
-		if urlparse(Player().getPlayingFile()).hostname[-11:]=="vpnmate.com":
+		if urlparse(Player().getPlayingFile()).hostname[-11:]=="tv4.live":
 			Ap = 1
 	except:
 		pass
