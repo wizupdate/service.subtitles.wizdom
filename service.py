@@ -318,16 +318,16 @@ elif action == 'download':
 			Ap = 1
 	except:
 		pass
-	
+
 	if Ap==1 and myAddon.getSetting("uploadAP") == "true":
 		try:
-			response = get("http://subs.vpnmate.com/webupload.php?status=1&imdb=%s&season=%s&episode=%s"%(getParam("imdb", params),getParam("season", params),getParam("episode", params)))
+			response = get("https://subs2.apollogroup.tv/kodi.upload.php?status=1&imdb=%s&season=%s&episode=%s"%(getParam("imdb", params),getParam("season", params),getParam("episode", params)))
 			ap_object = loads(response.text)["result"]
-			if ap_object["lang"]["he"]==0:
+			if "Hebrew" not in ap_object["lang"]:
 				xbmc.sleep(30*1000)
 				i = Dialog().yesno("Apollo Upload Subtitle","Media version %s"%ap_object["version"],"This subtitle is 100% sync and match?")
 				if i == 1:
-					response = get("http://subs.vpnmate.com/webupload.php?upload=1&lang=he&subid=%s&imdb=%s&season=%s&episode=%s"%(getParam("id", params),getParam("imdb", params),getParam("season", params),getParam("episode", params)))
+					response = get("https://subs2.apollogroup.tv/kodi.upload.php?upload=1&lang=he&subid=%s&imdb=%s&season=%s&episode=%s"%(getParam("id", params),getParam("imdb", params),getParam("season", params),getParam("episode", params)))
 					ap_upload = loads(response.text)["result"]
 					if "error" in ap_upload:
 						Dialog().ok("Apollo Error","%s"%ap_upload["error"])
