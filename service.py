@@ -293,9 +293,9 @@ if action == 'search':
 	endOfDirectory(int(sys.argv[1]))
 	if myAddon.getSetting("Debug") == "true":
 		if imdb_id[:2] == "tt":
-			Dialog().ok("Debug "+myVersion, str(item), "imdb: "+str(imdb_id))
+			Dialog().ok(str(item), "imdb: "+str(imdb_id))
 		else:
-			Dialog().ok("Debug "+myVersion, str(item), "NO IDS")
+			Dialog().ok(str(item), "NO IDS")
 
 elif action == 'manualsearch':
 	searchstring = getParam("searchstring", params)
