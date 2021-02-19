@@ -5,19 +5,18 @@ from json import loads, load
 from shutil import rmtree
 from time import time
 from unicodedata import normalize
-from urllib import unquote_plus, unquote, quote
-from urlparse import urlparse
+from urllib.parse import unquote_plus, unquote, quote, urlparse
 from xbmcaddon import Addon
 from xbmcplugin import endOfDirectory, addDirectoryItem
 from xbmcgui import ListItem, Dialog
-from xbmcvfs import listdir, exists, mkdirs
-from xbmc import translatePath, executebuiltin, getInfoLabel, executeJSONRPC, Player, log, getCondVisibility
+from xbmcvfs import listdir, exists, mkdirs, translatePath
+from xbmc import executebuiltin, getInfoLabel, executeJSONRPC, Player, log, getCondVisibility
 
 myAddon = Addon()
 myScriptID = myAddon.getAddonInfo('id')
 myVersion = myAddon.getAddonInfo('version')
-myTmp = translatePath(myAddon.getAddonInfo('profile')).encode('utf-8')
-mySubFolder = translatePath(path.join(myTmp, 'subs')).encode('utf-8')
+myTmp = translatePath(myAddon.getAddonInfo('profile'))
+mySubFolder = translatePath(path.join(myTmp, 'subs'))
 myName = myAddon.getAddonInfo('name')
 myLang = myAddon.getLocalizedString
 
@@ -44,7 +43,7 @@ def convert_to_utf(file):
 
 
 def lowercase_with_underscores(str):
-	return normalize('NFKD', unicode(unicode(str, 'utf-8'))).encode('utf-8', 'ignore')
+	return normalize('NFKD', str)
 
 
 def download(id):
@@ -60,7 +59,7 @@ def download(id):
 	if not path.exists(archive_file):
 		data = get("http://zip.%s/"%format(myDomain)+id+".zip")
 		open(archive_file, 'wb').write(data.content)
-	executebuiltin(('XBMC.Extract("%s","%s")' % (archive_file, mySubFolder)).encode('utf-8'), True)
+	executebuiltin('XBMC.Extract("%s","%s")' % (archive_file, mySubFolder), True)
 	for file_ in listdir(mySubFolder)[1]:
 		ufile = file_.decode('utf-8')
 		file_ = path.join(mySubFolder, ufile)
@@ -104,8 +103,8 @@ def searchByIMDB(imdb, season=0, episode=0, version=0):
 	subs_rate = []  # TODO remove not in used
 	if json != 0:
 		for item_data in json:
-			listitem = ListItem(label="Hebrew", label2=item_data["versioname"],
-								thumbnailImage="he", iconImage="%s" % (item_data["score"]/2))
+			listitem = ListItem(label="Hebrew", label2=item_data["versioname"])
+			listitem.setArt({ 'thumb': 'he', 'icon': str(item_data["score"]/2) })
 			if int(item_data["score"]) > 8:
 				listitem.setProperty("sync", "true")
 			url = "plugin://%s/?action=download&versioname=%s&id=%s&imdb=%s&season=%s&episode=%s" % (
@@ -180,7 +179,7 @@ def ManualSearch(title):
 
 
 def wlog(msg):
-	log((u"##**## [%s] %s" % ("Wizdom Subs", msg,)).encode('utf-8'), level=xbmc.LOGDEBUG)
+	log((u"##**## [%s] %s" % ("Wizdom Subs", msg,)), level=xbmc.LOGDEBUG)
 
 
 # ---- main -----
@@ -215,7 +214,7 @@ if action == 'search':
 			item['title'] = lowercase_with_underscores(getInfoLabel("VideoPlayer.TVshowtitle"))  # Show
 		if item['title'] == "":
 			item['title'] = lowercase_with_underscores(getInfoLabel("VideoPlayer.OriginalTitle"))  # try to get original title
-		item['file_original_path'] = unquote(unicode(Player().getPlayingFile(), 'utf-8'))  # Full path of a playing file
+		item['file_original_path'] = unquote(Player().getPlayingFile())  # Full path of a playing file
 		item['file_original_path'] = item['file_original_path'].split("?")
 		item['file_original_path'] = path.basename(item['file_original_path'][0])[:-4]
 		
@@ -293,9 +292,9 @@ if action == 'search':
 	endOfDirectory(int(sys.argv[1]))
 	if myAddon.getSetting("Debug") == "true":
 		if imdb_id[:2] == "tt":
-			Dialog().ok("Debug "+myVersion, str(item), "imdb: "+str(imdb_id))
+			Dialog().ok(str(item), "imdb: "+str(imdb_id))
 		else:
-			Dialog().ok("Debug "+myVersion, str(item), "NO IDS")
+			Dialog().ok(str(item), "NO IDS")
 
 elif action == 'manualsearch':
 	searchstring = getParam("searchstring", params)
@@ -318,16 +317,16 @@ elif action == 'download':
 			Ap = 1
 	except:
 		pass
-
+	
 	if Ap==1 and myAddon.getSetting("uploadAP") == "true":
 		try:
-			response = get("https://subs2.apollogroup.tv/kodi.upload.php?status=1&imdb=%s&season=%s&episode=%s"%(getParam("imdb", params),getParam("season", params),getParam("episode", params)))
+			response = get("http://subs.vpnmate.com/webupload.php?status=1&imdb=%s&season=%s&episode=%s"%(getParam("imdb", params),getParam("season", params),getParam("episode", params)))
 			ap_object = loads(response.text)["result"]
-			if "Hebrew" not in ap_object["lang"]:
+			if ap_object["lang"]["he"]==0:
 				xbmc.sleep(30*1000)
 				i = Dialog().yesno("Apollo Upload Subtitle","Media version %s"%ap_object["version"],"This subtitle is 100% sync and match?")
 				if i == 1:
-					response = get("https://subs2.apollogroup.tv/kodi.upload.php?upload=1&lang=he&subid=%s&imdb=%s&season=%s&episode=%s"%(getParam("id", params),getParam("imdb", params),getParam("season", params),getParam("episode", params)))
+					response = get("http://subs.vpnmate.com/webupload.php?upload=1&lang=he&subid=%s&imdb=%s&season=%s&episode=%s"%(getParam("id", params),getParam("imdb", params),getParam("season", params),getParam("episode", params)))
 					ap_upload = loads(response.text)["result"]
 					if "error" in ap_upload:
 						Dialog().ok("Apollo Error","%s"%ap_upload["error"])
@@ -342,4 +341,4 @@ elif action == 'clean':
 	except Exception as err:
 		wlog('Caught Exception: deleting tmp dir: %s' % format(err))
 		pass
-	executebuiltin((u'Notification(%s,%s)' % (myName, myLang(32004))).encode('utf-8'))
+	executebuiltin((u'Notification(%s,%s)' % (myName, myLang(32004))))
