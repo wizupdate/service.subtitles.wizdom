@@ -119,10 +119,11 @@ def searchByIMDB(imdb, season=0, episode=0, version=0):
 def searchTMDB(type, query, year):
 	tmdbKey = '653bb8af90162bd98fc7ee32bcbbfb3d'
 	filename = f'wizdom.search.tmdb.{type}.{lowercase_with_underscores(query)}.{year}.json'
-	if year > 0:
-		url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&year={year}&language=en"
-	else:
+	if not year or year <= 0:
 		url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&language=en"
+	else:
+		url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&year={year}&language=en"
+		
 	wlog(f"searchTMDB: {url}")
 	json = cachingJSON(filename,url)
 	try:
@@ -173,7 +174,7 @@ def ManualSearch(title):
 				searchByIMDB(str(imdb_id), 0, 0, lowercase_with_underscores(title))
 		elif json["type"] == "movie":
 			if "year" in json:
-				imdb_id = searchTMDB("movie",str(json['title']), int(json['year']))
+				imdb_id = searchTMDB("movie",str(json['title']), json['year'])
 			else:
 				imdb_id = searchTMDB("movie",str(json['title']), 0)
 			if imdb_id:
@@ -283,7 +284,7 @@ if action == 'search':
 		# Search Movie by Title+Year
 		else:
 			try:
-				imdb_id = searchTMDB("movie",query=item['title'], year=(int(item['year'])))
+				imdb_id = searchTMDB("movie",query=item['title'], year=item['year'])
 				wlog(f"Search IMDB:{imdb_id}")
 				if not imdb_id[:2] == "tt":
 					imdb_id = searchTMDB("movie",query=item['title'], year=(int(item['year'])-1))
