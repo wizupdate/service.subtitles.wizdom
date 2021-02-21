@@ -114,7 +114,7 @@ def searchTMDB(type, query, year):
 	tmdbKey = '653bb8af90162bd98fc7ee32bcbbfb3d'
 	filename = f'wizdom.search.tmdb.{type}.{lowercase_with_underscores(query)}.{year}.json'
 	if year > 0:
-		url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}}&query={query}&year={year}&language=en"
+		url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&year={year}&language=en"
 	else:
 		url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&language=en"
 	wlog(f"searchTMDB: {url}")
@@ -126,7 +126,7 @@ def searchTMDB(type, query, year):
 		return 0
 
 	filename = f'wizdom.tmdb.{tmdb_id}.json'
-	url = f"http://api.tmdb.org/3/{type}/{tmdb_id}}/external_ids?api_key={tmdbKey}&language=en"
+	url = f"http://api.tmdb.org/3/{type}/{tmdb_id}/external_ids?api_key={tmdbKey}&language=en"
 	response = get(url)
 	json = loads(response.text)
 	try:
@@ -315,13 +315,13 @@ elif action == 'download':
 	
 	if Ap==1 and myAddon.getSetting("uploadAP") == "true":
 		try:
-			response = get(f'http://subs.vpnmate.com/webupload.php?status=1&imdb={getParam("imdb", params)}&season={getParam("season", params)}&episode={getParam("episode", params)}'
+			response = get(f'http://subs.vpnmate.com/webupload.php?status=1&imdb={getParam("imdb", params)}&season={getParam("season", params)}&episode={getParam("episode", params)}')
 			ap_object = loads(response.text)["result"]
 			if ap_object["lang"]["he"]==0:
 				xbmc.sleep(30*1000)
-				i = Dialog().yesno("Apollo Upload Subtitle",f"Media version {ap_object["version"]}","This subtitle is 100% sync and match?")
+				i = Dialog().yesno("Apollo Upload Subtitle" ,f"Media version {ap_object['version']}","This subtitle is 100% sync and match?")
 				if i == 1:
-					response = get(f'http://subs.vpnmate.com/webupload.php?upload=1&lang=he&subid={getParam("id", params)}&imdb={getParam("imdb", params)}&season={getParam("season", params)}&episode={getParam("episode", params)}'
+					response = get(f'http://subs.vpnmate.com/webupload.php?upload=1&lang=he&subid={getParam("id", params)}&imdb={getParam("imdb", params)}&season={getParam("season", params)}&episode={getParam("episode", params)}')
 					ap_upload = loads(response.text)["result"]
 					if "error" in ap_upload:
 						Dialog().ok("Apollo Error",f'{ ap_upload["error"] }')
@@ -336,4 +336,4 @@ elif action == 'clean':
 	except Exception as err:
 		wlog(f'Caught Exception: deleting tmp dir: {format(err)}')
 		pass
-	executebuiltin(f'Notification({myName},{myLang(32004)})'
+	executebuiltin(f'Notification({myName},{myLang(32004)}')
