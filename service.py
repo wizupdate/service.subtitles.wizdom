@@ -10,7 +10,7 @@ from xbmcaddon import Addon
 from xbmcplugin import endOfDirectory, addDirectoryItem
 from xbmcgui import ListItem, Dialog
 from xbmcvfs import listdir, exists, mkdirs, translatePath
-from xbmc import executebuiltin, getInfoLabel, executeJSONRPC, Player, log, getCondVisibility
+from xbmc import executebuiltin, getInfoLabel, executeJSONRPC, Player, log, getCondVisibility, LOGDEBUG
 
 myAddon = Addon()
 myScriptID = myAddon.getAddonInfo('id')
@@ -25,7 +25,7 @@ def getDomain():
 		myDomain = str(get('https://pastebin.com/raw/1vbRPSGh').text)
 		return myDomain
 	except Exception as err:
-		wlog('Caught Exception: error in finding getDomain: %s' % format(err))
+		wlog(f'Caught Exception: error in finding getDomain: {format(err)}')
 		return "lolfw.com"
 
 myDomain = getDomain()
@@ -38,7 +38,7 @@ def convert_to_utf(file):
 		with codecs.open(file, 'w', 'utf-8') as output:
 			output.write(srt_data)
 	except Exception as err:
-		wlog('Caught Exception: error converting to utf: %s' % format(err))
+		wlog(f'Caught Exception: error converting to utf: {format(err)}')
 		pass
 
 
@@ -50,16 +50,16 @@ def download(id):
 	try:
 		rmtree(mySubFolder)
 	except Exception as err:
-		wlog('Caught Exception: error deleting folders: %s' % format(err))
+		wlog(f'Caught Exception: error deleting folders: {format(err)}')
 		pass
 	mkdirs(mySubFolder)
 	subtitle_list = []
 	exts = [".srt", ".sub", ".str"]
 	archive_file = path.join(myTmp, 'wizdom.sub.'+id+'.zip')
 	if not path.exists(archive_file):
-		data = get("http://zip.%s/"%format(myDomain)+id+".zip")
+		data = get(f"http://zip.{format(myDomain)}/"+id+".zip")
 		open(archive_file, 'wb').write(data.content)
-	executebuiltin('XBMC.Extract("%s","%s")' % (archive_file, mySubFolder), True)
+	executebuiltin(f'XBMC.Extract({archive_file},{mySubFolder})', True)
 	for file_ in listdir(mySubFolder)[1]:
 		ufile = file_.decode('utf-8')
 		file_ = path.join(mySubFolder, ufile)
@@ -90,15 +90,14 @@ def getParam(name, params):
 	try:
 		return unquote_plus(params[name])
 	except Exception as err:
-		wlog('Caught Exception: error getting param: %s' % format(err))
+		wlog(f'Caught Exception: error getting param: {format(err)}')
 		pass
 
 def searchByIMDB(imdb, season=0, episode=0, version=0):
-	filename = 'wizdom.imdb.%s.%s.%s.json' % (imdb, season, episode)
-	url = "http://json.%s/search.php?action=by_id&imdb=%s&season=%s&episode=%s&version=%s" % (
-		myDomain, imdb, season, episode, version)
+	filename = f'wizdom.imdb.{imdb}.{season}.{episode}.json'
+	url = f"http://json.{myDomain}/search.php?action=by_id&imdb={imdb}&season={season}&episode={episode}&version={version}"
 
-	wlog("searchByIMDB:%s" % url)
+	wlog(f"searchByIMDB: {url}")
 	json = cachingJSON(filename,url)
 	subs_rate = []  # TODO remove not in used
 	if json != 0:
@@ -107,36 +106,33 @@ def searchByIMDB(imdb, season=0, episode=0, version=0):
 			listitem.setArt({ 'thumb': 'he', 'icon': str(item_data["score"]/2) })
 			if int(item_data["score"]) > 8:
 				listitem.setProperty("sync", "true")
-			url = "plugin://%s/?action=download&versioname=%s&id=%s&imdb=%s&season=%s&episode=%s" % (
-					myScriptID, item_data["versioname"], item_data["id"],imdb, season, episode)
+			url = f'plugin://{myScriptID}/?action=download&versioname={item_data["versioname"]}&id={item_data["id"]}&imdb={imdb}&season={season}&episode={episode}'
 			addDirectoryItem(handle=int(sys.argv[1]), url=url, listitem=listitem, isFolder=False)
 
 
 def searchTMDB(type, query, year):
 	tmdbKey = '653bb8af90162bd98fc7ee32bcbbfb3d'
-	filename = 'wizdom.search.tmdb.%s.%s.%s.json' % (type,lowercase_with_underscores(query), year)
+	filename = f'wizdom.search.tmdb.{type}.{lowercase_with_underscores(query)}.{year}.json'
 	if year > 0:
-		url = "http://api.tmdb.org/3/search/%s?api_key=%s&query=%s&year=%s&language=en" % (
-			type,tmdbKey, query, year)
+		url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}}&query={query}&year={year}&language=en"
 	else:
-		url = "http://api.tmdb.org/3/search/%s?api_key=%s&query=%s&language=en" % (
-			type,tmdbKey, query)
-	wlog("searchTMDB:%s" % url)
+		url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&language=en"
+	wlog(f"searchTMDB: {url}")
 	json = cachingJSON(filename,url)
 	try:
 		tmdb_id = int(json["results"][0]["id"])
 	except Exception as err:
-		wlog('Caught Exception: error searchTMDB: %s' % format(err))
+		wlog(f'Caught Exception: error searchTMDB: {format(err)}')
 		return 0
 
-	filename = 'wizdom.tmdb.%s.json' % (tmdb_id)
-	url = "http://api.tmdb.org/3/%s/%s/external_ids?api_key=%s&language=en" % (type,tmdb_id, tmdbKey)
+	filename = f'wizdom.tmdb.{tmdb_id}.json'
+	url = f"http://api.tmdb.org/3/{type}/{tmdb_id}}/external_ids?api_key={tmdbKey}&language=en"
 	response = get(url)
 	json = loads(response.text)
 	try:
 		imdb_id = json["imdb_id"]
 	except Exception:
-		wlog('Caught Exception: error searching movie: %s' % format(err))
+		wlog(f'Caught Exception: error searching movie: {format(err)}')
 		return 0
 
 	return imdb_id
@@ -156,10 +152,9 @@ def cachingJSON(filename, url):
 
 
 def ManualSearch(title):
-	filename = "wizdom.manual.%s.json"%lowercase_with_underscores(title)
-	url = "http://json.%s/search.php?action=guessit&filename=%s" % (
-		myDomain, lowercase_with_underscores(title))
-	wlog("ManualSearch:%s" % url)
+	filename = f"wizdom.manual.{lowercase_with_underscores(title)}.json"
+	url = f"http://json.{myDomain}/search.php?action=guessit&filename={lowercase_with_underscores(title)}"
+	wlog(f"ManualSearch:{url}")
 	try:
 		json = cachingJSON(filename,url)
 		if json["type"] == "episode":
@@ -174,12 +169,12 @@ def ManualSearch(title):
 			if imdb_id:
 				searchByIMDB(str(imdb_id), 0, 0, lowercase_with_underscores(title))
 	except Exception as err:
-		wlog('Caught Exception: error in manual search: %s' % format(err))
+		wlog(f'Caught Exception: error in manual search: {format(err)}')
 		pass
 
 
 def wlog(msg):
-	log((u"##**## [%s] %s" % ("Wizdom Subs", msg,)), level=xbmc.LOGDEBUG)
+	log(f"##**## [Wizdom Subs] {msg}", level=LOGDEBUG)
 
 
 # ---- main -----
@@ -191,13 +186,13 @@ if len(sys.argv) >= 2:
 	params = getParams(sys.argv[2])
 	action = getParam("action", params)
 
-wlog("Version:%s" % myVersion)
-wlog("Action:%s" % action)
+wlog(f"Version: {myVersion}")
+wlog(f"Action: {action}")
 
 if action == 'search':
 	item = {}
 
-	wlog("isPlaying:%s" % Player().isPlaying())
+	wlog(f"isPlaying: {Player().isPlaying()}")
 	if Player().isPlaying():
 		item['year'] = getInfoLabel("VideoPlayer.Year")  # Year
 
@@ -235,7 +230,7 @@ if action == 'search':
 		else:
 			item['title'] = "SearchFor..."  # In order to show "No Subtitles Found" result.
 	
-	wlog("item:%s" % item)
+	wlog(f"item: {item}")
 	imdb_id = 0
 	try:
 		if Player().isPlaying():	# Enable using subtitles search dialog when kodi is not playing
@@ -244,7 +239,7 @@ if action == 'search':
 			imdb_id_query = '{"jsonrpc": "2.0", "method": "Player.GetItem", "params": {"playerid": ' + \
 				str(playerid) + ', "properties": ["imdbnumber"]}, "id": 1}'
 			imdb_id = loads(executeJSONRPC(imdb_id_query))['result']['item']['imdbnumber']
-			wlog("imdb JSONPC:%s" % imdb_id)
+			wlog(f"imdb JSONPC: {imdb_id}")
 		else:
 			if labelIMDB:
 				imdb_id = labelIMDB
@@ -256,7 +251,7 @@ if action == 'search':
 				else:
 					imdb_id = "tt0"  # In order to show "No Subtitles Found" result => Doesn't recognize movie/episode
 	except Exception as err:
-		wlog('Caught Exception: error in imdb id: %s' % format(err))		
+		wlog(f"Caught Exception: error in imdb id: {format(err)}")		
 		pass
 
 	if imdb_id[:2] == "tt":  # Simple IMDB_ID
@@ -266,24 +261,24 @@ if action == 'search':
 		if item['season'] or item['episode']:
 			try:
 				imdb_id = searchTMDB("tv",quote(item['title']),0)
-				wlog("Search TV IMDB:%s [%s]" % (imdb_id, item['title']))
+				wlog(f"Search TV IMDB:{imdb_id} [{item['title']}]")
 				if imdb_id[:2] == "tt":
 					searchByIMDB(imdb_id, item['season'], item['episode'], item['file_original_path'])
 			except Exception as err:
-				wlog('Caught Exception: error in tv search: %s' % format(err))
+				wlog(f'Caught Exception: error in tv search: {format(err)}')
 				pass
 		# Search Movie by Title+Year
 		else:
 			try:
 				imdb_id = searchTMDB("movie",query=item['title'], year=item['year'])
-				wlog("Search IMDB:%s" % imdb_id)
+				wlog(f"Search IMDB:{imdb_id}")
 				if not imdb_id[:2] == "tt":
 					imdb_id = searchTMDB("movie",query=item['title'], year=(int(item['year'])-1))
-					wlog("Search IMDB(2):%s" % imdb_id)
+					wlog(f"Search IMDB(2):{imdb_id}")
 				if imdb_id[:2] == "tt":
 					searchByIMDB(imdb_id, 0, 0, item['file_original_path'])
 			except Exception as err:
-				wlog('Caught Exception: error in movie search: %s' % format(err))
+				wlog(f'Caught Exception: error in movie search: {format(err)}')
 				pass
 
 	# Search Local File
@@ -303,7 +298,7 @@ elif action == 'manualsearch':
 
 elif action == 'download':
 	id = getParam("id", params)
-	wlog("Download ID:%s" % id)
+	wlog(f"Download ID: {id}")
 	subs = download(id)
 	for sub in subs:
 		listitem = ListItem(label=sub)
@@ -320,16 +315,16 @@ elif action == 'download':
 	
 	if Ap==1 and myAddon.getSetting("uploadAP") == "true":
 		try:
-			response = get("http://subs.vpnmate.com/webupload.php?status=1&imdb=%s&season=%s&episode=%s"%(getParam("imdb", params),getParam("season", params),getParam("episode", params)))
+			response = get(f'http://subs.vpnmate.com/webupload.php?status=1&imdb={getParam("imdb", params)}&season={getParam("season", params)}&episode={getParam("episode", params)}'
 			ap_object = loads(response.text)["result"]
 			if ap_object["lang"]["he"]==0:
 				xbmc.sleep(30*1000)
-				i = Dialog().yesno("Apollo Upload Subtitle","Media version %s"%ap_object["version"],"This subtitle is 100% sync and match?")
+				i = Dialog().yesno("Apollo Upload Subtitle",f"Media version {ap_object["version"]}","This subtitle is 100% sync and match?")
 				if i == 1:
-					response = get("http://subs.vpnmate.com/webupload.php?upload=1&lang=he&subid=%s&imdb=%s&season=%s&episode=%s"%(getParam("id", params),getParam("imdb", params),getParam("season", params),getParam("episode", params)))
+					response = get(f'http://subs.vpnmate.com/webupload.php?upload=1&lang=he&subid={getParam("id", params)}&imdb={getParam("imdb", params)}&season={getParam("season", params)}&episode={getParam("episode", params)}'
 					ap_upload = loads(response.text)["result"]
 					if "error" in ap_upload:
-						Dialog().ok("Apollo Error","%s"%ap_upload["error"])
+						Dialog().ok("Apollo Error",f'{ ap_upload["error"] }')
 					else:
 						Dialog().ok("Apollo","Sub uploaded. Thank you!")
 		except:
@@ -339,6 +334,6 @@ elif action == 'clean':
 	try:
 		rmtree(myTmp)
 	except Exception as err:
-		wlog('Caught Exception: deleting tmp dir: %s' % format(err))
+		wlog(f'Caught Exception: deleting tmp dir: {format(err)}')
 		pass
-	executebuiltin((u'Notification(%s,%s)' % (myName, myLang(32004))))
+	executebuiltin(f'Notification({myName},{myLang(32004)})'
