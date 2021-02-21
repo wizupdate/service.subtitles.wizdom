@@ -150,8 +150,10 @@ def cachingJSON(filename, url):
 	json_file = path.join(myTmp, filename)
 	if not path.exists(json_file) or not path.getsize(json_file) > 20 or (time()-path.getmtime(json_file) > 30*60):
 		data = get(url)
+		wlog(f'HTTP GET: {url} \n Response: {data.content}')
 		open(json_file, 'wb').write(data.content)
 	if path.exists(json_file) and path.getsize(json_file) > 20:
+		wlog(f'File [{filename}] already cached')
 		with open(json_file,'r') as json_data:
 			json_object = load(json_data)
 		return json_object
@@ -162,7 +164,7 @@ def cachingJSON(filename, url):
 def ManualSearch(title):
 	filename = f"wizdom.manual.{lowercase_with_underscores(title)}.json"
 	url = f"http://json.{myDomain}/search.php?action=guessit&filename={lowercase_with_underscores(title)}"
-	wlog(f"ManualSearch:{url}")
+	wlog(f"ManualSearch: {url}")
 	try:
 		json = cachingJSON(filename,url)
 		if json["type"] == "episode":
@@ -171,7 +173,7 @@ def ManualSearch(title):
 				searchByIMDB(str(imdb_id), 0, 0, lowercase_with_underscores(title))
 		elif json["type"] == "movie":
 			if "year" in json:
-				imdb_id = searchTMDB("movie",str(json['title']), json['year'])
+				imdb_id = searchTMDB("movie",str(json['title']), int(json['year']))
 			else:
 				imdb_id = searchTMDB("movie",str(json['title']), 0)
 			if imdb_id:
@@ -281,7 +283,7 @@ if action == 'search':
 		# Search Movie by Title+Year
 		else:
 			try:
-				imdb_id = searchTMDB("movie",query=item['title'], year=item['year'])
+				imdb_id = searchTMDB("movie",query=item['title'], year=(int(item['year'])))
 				wlog(f"Search IMDB:{imdb_id}")
 				if not imdb_id[:2] == "tt":
 					imdb_id = searchTMDB("movie",query=item['title'], year=(int(item['year'])-1))
