@@ -4,13 +4,15 @@ from os import path
 from json import loads, load
 from shutil import rmtree
 from time import time
+from traceback import format_exc
 from unicodedata import normalize
 from urllib.parse import unquote_plus, unquote, quote, urlparse
 from xbmcaddon import Addon
 from xbmcplugin import endOfDirectory, addDirectoryItem
 from xbmcgui import ListItem, Dialog
 from xbmcvfs import listdir, exists, mkdirs, translatePath
-from xbmc import executebuiltin, getInfoLabel, executeJSONRPC, Player, log, getCondVisibility, LOGDEBUG
+from xbmc import executebuiltin, getInfoLabel, executeJSONRPC, Player, log, getCondVisibility
+
 
 myAddon = Addon()
 myScriptID = myAddon.getAddonInfo('id')
@@ -25,7 +27,8 @@ def getDomain():
 		myDomain = str(get('https://pastebin.com/raw/1vbRPSGh').text)
 		return myDomain
 	except Exception as err:
-		wlog(f'Caught Exception: error in finding getDomain: {format(err)}')
+		wlog(f'Caught Exception: error in finding getDomain: {format(err)}', xbmc.LOGERROR)
+		wlog(format_exc(), xbmc.LOGERROR)
 		return "lolfw.com"
 
 myDomain = getDomain()
@@ -38,7 +41,8 @@ def convert_to_utf(file):
 		with codecs.open(file, 'w', 'utf-8') as output:
 			output.write(srt_data)
 	except Exception as err:
-		wlog(f'Caught Exception: error converting to utf: {format(err)}')
+		wlog(f'Caught Exception: error converting to utf: {format(err)}', xbmc.LOGERROR)
+		wlog(format_exc(), xbmc.LOGERROR)
 		pass
 
 
@@ -50,7 +54,8 @@ def download(id):
 	try:
 		rmtree(mySubFolder)
 	except Exception as err:
-		wlog(f'Caught Exception: error deleting folders: {format(err)}')
+		wlog(f'Caught Exception: error deleting folders: {format(err)}', xbmc.LOGERROR)
+		wlog(format_exc(), xbmc.LOGERROR)
 		pass
 	mkdirs(mySubFolder)
 	subtitle_list = []
@@ -90,7 +95,8 @@ def getParam(name, params):
 	try:
 		return unquote_plus(params[name])
 	except Exception as err:
-		wlog(f'Caught Exception: error getting param: {format(err)}')
+		wlog(f'Caught Exception: error getting param: {format(err)}', xbmc.LOGERROR)
+		wlog(format_exc(), xbmc.LOGERROR)
 		pass
 
 def searchByIMDB(imdb, season=0, episode=0, version=0):
@@ -122,7 +128,8 @@ def searchTMDB(type, query, year):
 	try:
 		tmdb_id = int(json["results"][0]["id"])
 	except Exception as err:
-		wlog(f'Caught Exception: error searchTMDB: {format(err)}')
+		wlog(f'Caught Exception: error searchTMDB: {format(err)}', xbmc.LOGERROR)
+		wlog(format_exc(), xbmc.LOGERROR)
 		return 0
 
 	filename = f'wizdom.tmdb.{tmdb_id}.json'
@@ -132,7 +139,8 @@ def searchTMDB(type, query, year):
 	try:
 		imdb_id = json["imdb_id"]
 	except Exception:
-		wlog(f'Caught Exception: error searching movie: {format(err)}')
+		wlog(f'Caught Exception: error searching movie: {format(err)}', xbmc.LOGERROR)
+		wlog(format_exc(), xbmc.LOGERROR)
 		return 0
 
 	return imdb_id
@@ -169,12 +177,13 @@ def ManualSearch(title):
 			if imdb_id:
 				searchByIMDB(str(imdb_id), 0, 0, lowercase_with_underscores(title))
 	except Exception as err:
-		wlog(f'Caught Exception: error in manual search: {format(err)}')
+		wlog(f'Caught Exception: error in manual search: {format(err)}', xbmc.LOGERROR)
+		wlog(format_exc(), xbmc.LOGERROR)
 		pass
 
 
-def wlog(msg):
-	log(f"##**## [Wizdom Subs] {msg}", level=LOGDEBUG)
+def wlog(msg, level=xbmc.LOGDEBUG):
+	log(f"##**## [Wizdom Subs] {msg}", level=level)
 
 
 # ---- main -----
@@ -251,7 +260,8 @@ if action == 'search':
 				else:
 					imdb_id = "tt0"  # In order to show "No Subtitles Found" result => Doesn't recognize movie/episode
 	except Exception as err:
-		wlog(f"Caught Exception: error in imdb id: {format(err)}")		
+		wlog(f"Caught Exception: error in imdb id: {format(err)}", xbmc.LOGERROR)
+		wlog(format_exc(), xbmc.LOGERROR)	
 		pass
 
 	if imdb_id[:2] == "tt":  # Simple IMDB_ID
@@ -265,7 +275,8 @@ if action == 'search':
 				if imdb_id[:2] == "tt":
 					searchByIMDB(imdb_id, item['season'], item['episode'], item['file_original_path'])
 			except Exception as err:
-				wlog(f'Caught Exception: error in tv search: {format(err)}')
+				wlog(f'Caught Exception: error in tv search: {format(err)}', xbmc.LOGERROR)
+				wlog(format_exc(), xbmc.LOGERROR)
 				pass
 		# Search Movie by Title+Year
 		else:
@@ -278,7 +289,8 @@ if action == 'search':
 				if imdb_id[:2] == "tt":
 					searchByIMDB(imdb_id, 0, 0, item['file_original_path'])
 			except Exception as err:
-				wlog(f'Caught Exception: error in movie search: {format(err)}')
+				wlog(f'Caught Exception: error in movie search: {format(err)}', xbmc.LOGERROR)
+				wlog(format_exc(), xbmc.LOGERROR)
 				pass
 
 	# Search Local File
@@ -334,6 +346,7 @@ elif action == 'clean':
 	try:
 		rmtree(myTmp)
 	except Exception as err:
-		wlog(f'Caught Exception: deleting tmp dir: {format(err)}')
+		wlog(f'Caught Exception: deleting tmp dir: {format(err)}', xbmc.LOGERROR)
+		wlog(format_exc(), xbmc.LOGERROR)
 		pass
 	executebuiltin(f'Notification({myName},{myLang(32004)}')
