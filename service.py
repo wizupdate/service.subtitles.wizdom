@@ -127,6 +127,9 @@ def searchTMDB(type, query, year):
 	wlog(f"searchTMDB: {url}")
 	json = cachingJSON(filename,url)
 	try:
+		if not json or not json["total_results"] or int(json["total_results"]) == 0:
+			wlog(f'Got no results from TMDB')
+			return 0
 		tmdb_id = int(json["results"][0]["id"])
 	except Exception as err:
 		wlog(f'Caught Exception: error searchTMDB: {format(err)}', xbmc.LOGERROR)
@@ -267,15 +270,15 @@ if action == 'search':
 		wlog(format_exc(), xbmc.LOGERROR)	
 		pass
 
-	if imdb_id[:2] == "tt":  # Simple IMDB_ID
+	if isinstance(imdb_id, str) and imdb_id[:2] == "tt":  # Simple IMDB_ID
 		searchByIMDB(imdb_id, item['season'], item['episode'], item['file_original_path'])
 	else:
 		# Search TV Show by Title
 		if item['season'] or item['episode']:
 			try:
 				imdb_id = searchTMDB("tv",quote(item['title']),0)
-				wlog(f"Search TV IMDB:{imdb_id} [{item['title']}]")
-				if imdb_id[:2] == "tt":
+				wlog(f"Search TV TMDB:{imdb_id} [{item['title']}]")
+				if isinstance(imdb_id, str) and imdb_id[:2] == "tt":
 					searchByIMDB(imdb_id, item['season'], item['episode'], item['file_original_path'])
 			except Exception as err:
 				wlog(f'Caught Exception: error in tv search: {format(err)}', xbmc.LOGERROR)
@@ -285,11 +288,11 @@ if action == 'search':
 		else:
 			try:
 				imdb_id = searchTMDB("movie",query=item['title'], year=item['year'])
-				wlog(f"Search IMDB:{imdb_id}")
-				if not imdb_id[:2] == "tt":
+				wlog(f"Search TMDB:{imdb_id}")
+				if not isinstance(imdb_id, str) or not imdb_id[:2] == "tt":
 					imdb_id = searchTMDB("movie",query=item['title'], year=(int(item['year'])-1))
 					wlog(f"Search IMDB(2):{imdb_id}")
-				if imdb_id[:2] == "tt":
+				if isinstance(imdb_id, str) and imdb_id[:2] == "tt":
 					searchByIMDB(imdb_id, 0, 0, item['file_original_path'])
 			except Exception as err:
 				wlog(f'Caught Exception: error in movie search: {format(err)}', xbmc.LOGERROR)
@@ -301,7 +304,7 @@ if action == 'search':
 		ManualSearch(item['title'])
 	endOfDirectory(int(sys.argv[1]))
 	if myAddon.getSetting("Debug") == "true":
-		if imdb_id[:2] == "tt":
+		if isinstance(imdb_id, str) and imdb_id[:2] == "tt":
 			Dialog().ok(str(item), "imdb: "+str(imdb_id))
 		else:
 			Dialog().ok(str(item), "NO IDS")
