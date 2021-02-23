@@ -127,7 +127,7 @@ def cachingJSON(filename, url):
         with open(json_file, "wb") as subFile:
             subFile.write(content)
             fileExists = True
-        return load(content.decode())
+        return loads(content.decode())
     elif os.path.exists(json_file) and os.path.getsize(json_file) > 20:
         print(f"File [{filename}] already cached")
         fileExists = True
@@ -135,7 +135,7 @@ def cachingJSON(filename, url):
     if (fileExists):
         with open(json_file, "r") as json_data:
             return load(json_data)
-            
+
     return 0
 
 
