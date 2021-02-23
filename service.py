@@ -26,7 +26,7 @@ __language__ = __addon__.getLocalizedString
 
 __cwd__ = xbmcvfs.translatePath(__addon__.getAddonInfo("path"))
 __profile__ = xbmcvfs.translatePath(__addon__.getAddonInfo("profile"))
-__tmpfolder__ = xbmcvfs.translatePath(path.join(__profile__, "subs", ""))
+__tmpfolder__ = xbmcvfs.translatePath(os.path.join(__profile__, "subs", ""))
 
 if xbmcvfs.exists(__tmpfolder__):
     shutil.rmtree(__tmpfolder__)
