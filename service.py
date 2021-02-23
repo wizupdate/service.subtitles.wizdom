@@ -46,7 +46,7 @@ def download(id):
     archive_file = os.path.join(__tmpfolder__, "wizdom.sub." + id + ".zip")
     if not os.path.exists(archive_file):
         url = f"http://zip.{format(myDomain)}/" + id + ".zip"
-        url = urllib.parse.quote(url)
+        url = quote(url)
         f = urllib.request.urlopen(url)
         with open(archive_file, "wb") as subFile:
             subFile.write(f.read())
@@ -89,7 +89,7 @@ def searchTMDB(type, query, year):
         url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&language=en"
     else:
         url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&year={year}&language=en"
-    url = urllib.parse.quote(url)
+    url = quote(url)
     log(f"searchTMDB: {url}")
     json = cachingJSON(filename, url)
     try:
@@ -104,7 +104,7 @@ def searchTMDB(type, query, year):
 
     filename = f"wizdom.tmdb.{tmdb_id}.json"
     url = f"http://api.tmdb.org/3/{type}/{tmdb_id}/external_ids?api_key={tmdbKey}&language=en"
-    url = urllib.parse.quote(url)
+    url = quote(url)
     req = urllib.request.urlopen(url)
     json = loads(req.read())
     try:
@@ -124,7 +124,7 @@ def cachingJSON(filename, url):
         or not os.path.getsize(json_file) > 20
         or (time() - os.path.getmtime(json_file) > 30 * 60)
     ):
-        url = urllib.parse.quote(url)
+        url = quote(url)
         f = urllib.request.urlopen(url)
         content = f.read()
         log(f"HTTP GET: {url} \n Content: {content}")

@@ -9,7 +9,7 @@ import urllib.request
 from traceback import format_exc
 from xbmcgui import Dialog
 from json import loads
-from urllib.parse import unquote_plus, urlparse
+from urllib.parse import quote, unquote_plus, urlparse
 
 __addon__ = xbmcaddon.Addon()
 
@@ -48,7 +48,7 @@ def getlastsplit(firsrarfile, x):
 def getDomain():
     try:
         url = "https://pastebin.com/raw/1vbRPSGh"
-        url = urllib.parse.quote(url)
+        url = quote(url)
         req = urllib.request.urlopen(url)
         domain = str(req.read(), 'utf-8')
         return domain
@@ -99,7 +99,7 @@ def uploadAP(params):
     if params and Ap == 1 and __addon__.getSetting("uploadAP") == "true":
         try:
             url = f'http://subs.vpnmate.com/webupload.php?status=1&imdb={getParam("imdb", params)}&season={getParam("season", params)}&episode={getParam("episode", params)}'
-            url = urllib.parse.quote(url)
+            url = quote(url)
             req = urllib.request.urlopen(url)
             ap_object = loads(req.read())["result"]
             if ap_object["lang"]["he"] == 0:
@@ -111,7 +111,7 @@ def uploadAP(params):
                 )
                 if i == 1:
                     url = f'http://subs.vpnmate.com/webupload.php?upload=1&lang=he&subid={getParam("id", params)}&imdb={getParam("imdb", params)}&season={getParam("season", params)}&episode={getParam("episode", params)}'
-                    url = urllib.parse.quote(url)
+                    url = quote(url)
                     req = urllib.request.urlopen(url)
                     ap_upload = loads(url.read())["result"]
                     if "error" in ap_upload:
