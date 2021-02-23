@@ -100,7 +100,7 @@ def searchTMDB(type, query, year):
         return 0
 
     filename = f"wizdom.tmdb.{tmdb_id}.json"
-    url = f"http://api.tmdb.org/3/{type}/{tmdb_id}/external_ids?api_key={tmdbKey}&language=en"
+    url = f"http://api.tmdb.org/3/{type}/{tmdb_id}/external_ids?api_key={__tmdbkey__}&language=en"
     req = urllib.request.urlopen(url)
     json = loads(req.read())
     try:
