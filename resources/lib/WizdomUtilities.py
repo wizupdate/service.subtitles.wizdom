@@ -5,11 +5,11 @@ import xbmc
 import xbmcvfs
 import xbmcaddon
 import unicodedata
-import urllib
+import urllib.request
 from traceback import format_exc
 from xbmcgui import Dialog
 from json import loads
-from urllib.parse import unquote, unquote_plus, urlparse
+from urllib.parse import unquote_plus, urlparse
 
 __addon__ = xbmcaddon.Addon()
 
@@ -121,9 +121,10 @@ def uploadAP(params):
 
 def getParam(name, params):
     try:
-        return unquote_plus(params[name])
+        paramVal = params[name]
+        return unquote_plus(paramVal) if paramVal is not None else paramVal
     except Exception as err:
-        log(f"Caught Exception: error getting param: {format(err)}", xbmc.LOGERROR)
+        log(f"Caught Exception: error getting parameter [{name}]: {format(err)}", xbmc.LOGERROR)
         log(format_exc(), xbmc.LOGERROR)
         pass
 

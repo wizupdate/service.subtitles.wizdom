@@ -1,7 +1,7 @@
 import os
 import sys
 import shutil
-import urllib
+import urllib.request
 import xbmc
 import xbmcaddon
 import xbmcplugin
