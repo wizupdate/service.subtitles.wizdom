@@ -2,7 +2,6 @@ import os
 import sys
 import shutil
 import urllib
-from requests import get
 from json import loads, load
 from time import time
 from traceback import format_exc
