@@ -46,7 +46,6 @@ def download(id):
     archive_file = os.path.join(__tmpfolder__, "wizdom.sub." + id + ".zip")
     if not os.path.exists(archive_file):
         url = f"http://zip.{format(myDomain)}/" + id + ".zip"
-        url = quote(url)
         f = urllib.request.urlopen(url)
         with open(archive_file, "wb") as subFile:
             subFile.write(f.read())
@@ -89,7 +88,6 @@ def searchTMDB(type, query, year):
         url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&language=en"
     else:
         url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&year={year}&language=en"
-    url = quote(url)
     log(f"searchTMDB: {url}")
     json = cachingJSON(filename, url)
     try:
@@ -104,7 +102,6 @@ def searchTMDB(type, query, year):
 
     filename = f"wizdom.tmdb.{tmdb_id}.json"
     url = f"http://api.tmdb.org/3/{type}/{tmdb_id}/external_ids?api_key={tmdbKey}&language=en"
-    url = quote(url)
     req = urllib.request.urlopen(url)
     json = loads(req.read())
     try:
@@ -124,7 +121,6 @@ def cachingJSON(filename, url):
         or not os.path.getsize(json_file) > 20
         or (time() - os.path.getmtime(json_file) > 30 * 60)
     ):
-        url = quote(url)
         f = urllib.request.urlopen(url)
         content = f.read()
         log(f"HTTP GET: {url} \n Content: {content}")
@@ -146,17 +142,18 @@ def ManualSearch(title):
     log(f"ManualSearch: {url}")
     try:
         json = cachingJSON(filename, url)
+        title_str = quote(str(json["title"]))
         if json["type"] == "episode":
-            imdb_id = searchTMDB("tv", str(json["title"]), 0)
+            imdb_id = searchTMDB("tv", title_str, 0)
             if imdb_id:
-                searchByIMDB(str(imdb_id), 0, 0, normalizeString(title))
+                searchByIMDB(str(imdb_id), 0, 0, quote(normalizeString(title)))
         elif json["type"] == "movie":
             if "year" in json:
-                imdb_id = searchTMDB("movie", str(json["title"]), json["year"])
+                imdb_id = searchTMDB("movie", title_str, json["year"])
             else:
-                imdb_id = searchTMDB("movie", str(json["title"]), 0)
+                imdb_id = searchTMDB("movie", title_str, 0)
             if imdb_id:
-                searchByIMDB(str(imdb_id), 0, 0, normalizeString(title))
+                searchByIMDB(str(imdb_id), 0, 0, quote(normalizeString(title)))
     except Exception as err:
         log(f"Caught Exception: error in manual search: {format(err)}", xbmc.LOGERROR)
         log(format_exc(), xbmc.LOGERROR)
@@ -316,12 +313,12 @@ if action == "search":
         # Search Movie by Title+Year
         else:
             try:
-                imdb_id = searchTMDB("movie", query=item["title"], year=item["year"])
+                imdb_id = searchTMDB("movie", query=quote(item["title"]), year=item["year"])
                 log(f"Search TMDB:{imdb_id}")
                 if not isinstance(imdb_id, str) or not imdb_id[:2] == "tt":
                     year = (int(item["year"]) - 1) if item["year"] is not None and item["year"].isnumeric() is True else 0
                     imdb_id = searchTMDB(
-                        "movie", query=item["title"], year=year
+                        "movie", query=quote(item["title"]), year=year
                     )
                     log(f"Search IMDB(2):{imdb_id}")
                 if isinstance(imdb_id, str) and imdb_id[:2] == "tt":
