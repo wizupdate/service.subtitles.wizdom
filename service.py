@@ -316,7 +316,7 @@ if action == "search":
                 imdb_id = searchTMDB("movie", query=item["title"], year=item["year"])
                 log(f"Search TMDB:{imdb_id}")
                 if not isinstance(imdb_id, str) or not imdb_id[:2] == "tt":
-                    year = (int(item["year"]) - 1) if item["year"] is not None and item["year"] is not "" else 0
+                    year = (int(item["year"]) - 1) if item["year"] is not None and item["year"].isnumeric() is True else 0
                     imdb_id = searchTMDB(
                         "movie", query=item["title"], year=year
                     )
