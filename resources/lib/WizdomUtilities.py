@@ -89,6 +89,8 @@ def cleanFolders(folder):
 
 
 def uploadAP(params):
+    Ap = 0
+    
     # Upload AP
     try:
         if urlparse(xbmc.Player().getPlayingFile()).hostname[-11:] == "tv4.live":

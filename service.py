@@ -360,8 +360,7 @@ elif action == "download":
             handle=int(sys.argv[1]), url=sub, listitem=listitem, isFolder=False
         )
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
-    Ap = 0
-
+    
     uploadAP(params)
 
 elif action == "clean":
