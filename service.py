@@ -23,6 +23,8 @@ __cwd__ = xbmcvfs.translatePath(__addon__.getAddonInfo("path"))
 __profile__ = xbmcvfs.translatePath(__addon__.getAddonInfo("profile"))
 __tmpfolder__ = xbmcvfs.translatePath(os.path.join(__profile__, "subs", ""))
 
+__tmdbkey__ = "653bb8af90162bd98fc7ee32bcbbfb3d"
+
 if xbmcvfs.exists(__tmpfolder__):
     shutil.rmtree(__tmpfolder__)
 xbmcvfs.mkdirs(__tmpfolder__)
@@ -80,12 +82,11 @@ def searchByIMDB(imdb, season=0, episode=0, version=0):
 
 
 def searchTMDB(type, query, year):
-    tmdbKey = "653bb8af90162bd98fc7ee32bcbbfb3d"
     filename = f"wizdom.search.tmdb.{type}.{normalizeString(query)}.{year}.json"
     if not year or year <= 0:
-        url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&language=en"
+        url = f"http://api.tmdb.org/3/search/{type}?api_key={__tmdbkey__}&query={quote(query)}&language=en"
     else:
-        url = f"http://api.tmdb.org/3/search/{type}?api_key={tmdbKey}&query={query}&year={year}&language=en"
+        url = f"http://api.tmdb.org/3/search/{type}?api_key={__tmdbkey__}&query={quote(query)}&year={year}&language=en"
     log(f"searchTMDB: {url}")
     json = cachingJSON(filename, url)
     try:
@@ -114,6 +115,7 @@ def searchTMDB(type, query, year):
 
 def cachingJSON(filename, url):
     json_file = os.path.join(__profile__, filename)
+    fileExists = False
     if (
         not os.path.exists(json_file)
         or not os.path.getsize(json_file) > 20
@@ -121,17 +123,20 @@ def cachingJSON(filename, url):
     ):
         f = urllib.request.urlopen(url)
         content = f.read()
-        log(f"HTTP GET: {url} \n Content: {content}")
+        print(f"HTTP GET: {url} \n Content: {content.decode()}")
         with open(json_file, "wb") as subFile:
             subFile.write(content)
+            fileExists = True
+        return load(content.decode())
+    elif os.path.exists(json_file) and os.path.getsize(json_file) > 20:
+        print(f"File [{filename}] already cached")
+        fileExists = True
 
-    if os.path.exists(json_file) and os.path.getsize(json_file) > 20:
-        log(f"File [{filename}] already cached")
+    if (fileExists):
         with open(json_file, "r") as json_data:
-            json_object = load(json_data)
-        return json_object
-    else:
-        return 0
+            return load(json_data)
+            
+    return 0
 
 
 def ManualSearch(title):
@@ -140,7 +145,10 @@ def ManualSearch(title):
     log(f"ManualSearch: {url}")
     try:
         json = cachingJSON(filename, url)
-        title_str = quote(str(json["title"]))
+        if not json:
+            log(f"Error in ManualSearch for {title}")
+            return None
+        title_str = str(json["title"])
         if json["type"] == "episode":
             imdb_id = searchTMDB("tv", title_str, 0)
             if imdb_id:
@@ -314,7 +322,7 @@ if action == "search":
         else:
             try:
                 imdb_id = searchTMDB(
-                    "movie", query=quote(item["title"]), year=item["year"]
+                    "movie", query=item["title"], year=item["year"]
                 )
                 log(f"Search TMDB:{imdb_id}")
                 if not isinstance(imdb_id, str) or not imdb_id[:2] == "tt":
@@ -323,7 +331,7 @@ if action == "search":
                         if item["year"] is not None and item["year"].isnumeric() is True
                         else 0
                     )
-                    imdb_id = searchTMDB("movie", query=quote(item["title"]), year=year)
+                    imdb_id = searchTMDB("movie", query=item["title"], year=year)
                     log(f"Search IMDB(2):{imdb_id}")
                 if isinstance(imdb_id, str) and imdb_id[:2] == "tt":
                     searchByIMDB(imdb_id, 0, 0, item["file_original_path"])
