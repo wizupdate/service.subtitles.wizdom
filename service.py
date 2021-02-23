@@ -62,7 +62,7 @@ def download(id):
     return subtitle_list
 
 
-def searchByIMDB(imdb, season=0, episode=0, version=0):
+def searchByIMDB(imdb, season="0", episode="0", version=0):
     filename = f"wizdom.imdb.{imdb}.{season}.{episode}.json"
     url = f"http://json.{myDomain}/search.php?action=by_id&imdb={imdb}&season={season}&episode={episode}&version={version}"
 
@@ -207,10 +207,10 @@ if action == "search":
         item["year"] = xbmc.getInfoLabel("VideoPlayer.Year")  # Year
 
         item["season"] = str(xbmc.getInfoLabel("VideoPlayer.Season"))  # Season
-        if item["season"] == "" or item["season"] < 1:
+        if not item["year"].isnumeric() or item["season"] == "" or int(item["season"]) < 1:
             item["season"] = 0
         item["episode"] = str(xbmc.getInfoLabel("VideoPlayer.Episode"))  # Episode
-        if item["episode"] == "" or item["episode"] < 1:
+        if not item["year"].isnumeric() or item["episode"] == "" or int(item["episode"]) < 1:
             item["episode"] = 0
 
         if item["episode"] == 0:
@@ -328,7 +328,7 @@ if action == "search":
                 if not isinstance(imdb_id, str) or not imdb_id[:2] == "tt":
                     year = (
                         (int(item["year"]) - 1)
-                        if item["year"] is not None and item["year"].isnumeric() is True
+                        if item["year"] is not None and item["year"].isnumeric()
                         else 0
                     )
                     imdb_id = searchTMDB("movie", query=item["title"], year=year)
