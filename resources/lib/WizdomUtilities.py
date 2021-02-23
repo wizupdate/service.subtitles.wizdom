@@ -129,4 +129,4 @@ def getParam(name, params):
 
 
 def log(msg, level=xbmc.LOGDEBUG):
-    xmbc.log(f"##**## [Wizdom Subs] {msg}", level=level)
+    xbmc.log(f"##**## [Wizdom Subs] {msg}", level=level)

@@ -2,20 +2,15 @@ import os
 import sys
 import shutil
 import urllib
+import xbmc
+import xbmcaddon
+import xbmcplugin
+import xbmcvfs
 from json import loads, load
 from time import time
 from traceback import format_exc
-from urllib.parse import unquote_plus, unquote, quote, urlparse
-from xbmcplugin import endOfDirectory, addDirectoryItem
+from urllib.parse import unquote, quote
 from xbmcgui import ListItem, Dialog
-from xbmc import (
-    executebuiltin,
-    getInfoLabel,
-    executeJSONRPC,
-    Player,
-    log,
-    getCondVisibility,
-)
 
 __addon__ = xbmcaddon.Addon()
 __author__ = __addon__.getAddonInfo("author")
@@ -33,7 +28,6 @@ if xbmcvfs.exists(__tmpfolder__):
 xbmcvfs.mkdirs(__tmpfolder__)
 
 from resources.lib.WizdomUtilities import (
-    convert_to_utf,
     getParam,
     log,
     getDomain,
@@ -56,12 +50,14 @@ def download(id):
         with open(archive_file, "wb") as subFile:
             subFile.write(f.read())
         xbmc.sleep(500)
-    
-    xbmc.executebuiltin((f'Extract({archive_file},{__tmpfolder__})').encode('utf-8'), True)
+
+    xbmc.executebuiltin(
+        (f"Extract({archive_file},{__tmpfolder__})").encode("utf-8"), True
+    )
     for file in xbmcvfs.listdir(archive_file)[1]:
-      file = os.path.join(__tmpfolder__, file)
-      if (os.path.splitext( file )[1] in exts):
-        subtitle_list.append(file)
+        file = os.path.join(__tmpfolder__, file)
+        if os.path.splitext(file)[1] in exts:
+            subtitle_list.append(file)
 
     return subtitle_list
 
@@ -80,7 +76,7 @@ def searchByIMDB(imdb, season=0, episode=0, version=0):
             if int(item_data["score"]) > 8:
                 listitem.setProperty("sync", "true")
             url = f'plugin://{__scriptid__}/?action=download&versioname={item_data["versioname"]}&id={item_data["id"]}&imdb={imdb}&season={season}&episode={episode}'
-            addDirectoryItem(
+            xbmcplugin.addDirectoryItem(
                 handle=int(sys.argv[1]), url=url, listitem=listitem, isFolder=False
             )
 
@@ -131,7 +127,7 @@ def cachingJSON(filename, url):
         log(f"HTTP GET: {url} \n Content: {content}")
         with open(json_file, "wb") as subFile:
             subFile.write(content)
-        
+
     if os.path.exists(json_file) and os.path.getsize(json_file) > 20:
         log(f"File [{filename}] already cached")
         with open(json_file, "r") as json_data:
@@ -199,53 +195,55 @@ log(f"Action: {action}")
 if action == "search":
     item = {}
 
-    log(f"isPlaying: {Player().isPlaying()}")
-    if Player().isPlaying():
-        item["year"] = getInfoLabel("VideoPlayer.Year")  # Year
+    log(f"isPlaying: {xbmc.Player().isPlaying()}")
+    if xbmc.Player().isPlaying():
+        item["year"] = xbmc.getInfoLabel("VideoPlayer.Year")  # Year
 
-        item["season"] = str(getInfoLabel("VideoPlayer.Season"))  # Season
+        item["season"] = str(xbmc.getInfoLabel("VideoPlayer.Season"))  # Season
         if item["season"] == "" or item["season"] < 1:
             item["season"] = 0
-        item["episode"] = str(getInfoLabel("VideoPlayer.Episode"))  # Episode
+        item["episode"] = str(xbmc.getInfoLabel("VideoPlayer.Episode"))  # Episode
         if item["episode"] == "" or item["episode"] < 1:
             item["episode"] = 0
 
         if item["episode"] == 0:
             item["title"] = normalizeString(
-                getInfoLabel("VideoPlayer.Title")
+                xbmc.getInfoLabel("VideoPlayer.Title")
             )  # no original title, get just Title
         else:
             item["title"] = normalizeString(
-                getInfoLabel("VideoPlayer.TVshowtitle")
+                xbmc.getInfoLabel("VideoPlayer.TVshowtitle")
             )  # Show
         if item["title"] == "":
             item["title"] = normalizeString(
-                getInfoLabel("VideoPlayer.OriginalTitle")
+                xbmc.getInfoLabel("VideoPlayer.OriginalTitle")
             )  # try to get original title
         item["file_original_path"] = unquote(
-            Player().getPlayingFile()
+            xbmc.Player().getPlayingFile()
         )  # Full os.path of a playing file
         item["file_original_path"] = item["file_original_path"].split("?")
-        item["file_original_path"] = os.path.basename(item["file_original_path"][0])[:-4]
+        item["file_original_path"] = os.path.basename(item["file_original_path"][0])[
+            :-4
+        ]
 
     else:  # Take item params from window when kodi is not playing
-        labelIMDB = getInfoLabel("ListItem.IMDBNumber")
-        item["year"] = getInfoLabel("ListItem.Year")
-        item["season"] = getInfoLabel("ListItem.Season")
-        item["episode"] = getInfoLabel("ListItem.Episode")
+        labelIMDB = xbmc.getInfoLabel("ListItem.IMDBNumber")
+        item["year"] = xbmc.getInfoLabel("ListItem.Year")
+        item["season"] = xbmc.getInfoLabel("ListItem.Season")
+        item["episode"] = xbmc.getInfoLabel("ListItem.Episode")
         item["file_original_path"] = ""
-        labelType = getInfoLabel("ListItem.DBTYPE")  # movie/tvshow/season/episode
-        isItMovie = labelType == "movie" or getCondVisibility(
+        labelType = xbmc.getInfoLabel("ListItem.DBTYPE")  # movie/tvshow/season/episode
+        isItMovie = labelType == "movie" or xbmc.getCondVisibility(
             "Container.Content(movies)"
         )
-        isItEpisode = labelType == "episode" or getCondVisibility(
+        isItEpisode = labelType == "episode" or xbmc.getCondVisibility(
             "Container.Content(episodes)"
         )
 
         if isItMovie:
-            item["title"] = getInfoLabel("ListItem.OriginalTitle")
+            item["title"] = xbmc.getInfoLabel("ListItem.OriginalTitle")
         elif isItEpisode:
-            item["title"] = getInfoLabel("ListItem.TVShowTitle")
+            item["title"] = xbmc.getInfoLabel("ListItem.TVShowTitle")
         else:
             item[
                 "title"
@@ -255,18 +253,18 @@ if action == "search":
     imdb_id = 0
     try:
         if (
-            Player().isPlaying()
+            xbmc.Player().isPlaying()
         ):  # Enable using subtitles search dialog when kodi is not playing
             playerid_query = (
                 '{"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}'
             )
-            playerid = loads(executeJSONRPC(playerid_query))["result"][0]["playerid"]
+            playerid = loads(xbmc.executeJSONRPC(playerid_query))["result"][0]["playerid"]
             imdb_id_query = (
                 '{"jsonrpc": "2.0", "method": "Player.GetItem", "params": {"playerid": '
                 + str(playerid)
                 + ', "properties": ["imdbnumber"]}, "id": 1}'
             )
-            imdb_id = loads(executeJSONRPC(imdb_id_query))["result"]["item"][
+            imdb_id = loads(xbmc.executeJSONRPC(imdb_id_query))["result"]["item"][
                 "imdbnumber"
             ]
             log(f"imdb JSONPC: {imdb_id}")
@@ -334,7 +332,7 @@ if action == "search":
     # Search Local File
     if not imdb_id:
         ManualSearch(item["title"])
-    endOfDirectory(int(sys.argv[1]))
+    xbmcplugin.endOfDirectory(int(sys.argv[1]))
     if __addon__.getSetting("Debug") == "true":
         if isinstance(imdb_id, str) and imdb_id[:2] == "tt":
             Dialog().ok(str(item), "imdb: " + str(imdb_id))
@@ -344,7 +342,7 @@ if action == "search":
 elif action == "manualsearch":
     searchstring = getParam("searchstring", params)
     ManualSearch(searchstring)
-    endOfDirectory(int(sys.argv[1]))
+    xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 elif action == "download":
     id = getParam("id", params)
@@ -352,10 +350,10 @@ elif action == "download":
     subs = download(id)
     for sub in subs:
         listitem = ListItem(label=sub)
-        addDirectoryItem(
+        xbmcplugin.addDirectoryItem(
             handle=int(sys.argv[1]), url=sub, listitem=listitem, isFolder=False
         )
-    endOfDirectory(int(sys.argv[1]))
+    xbmcplugin.endOfDirectory(int(sys.argv[1]))
     Ap = 0
 
     uploadAP(params)
@@ -367,4 +365,4 @@ elif action == "clean":
         log(f"Caught Exception: deleting tmp dir: {format(err)}", xbmc.LOGERROR)
         log(format_exc(), xbmc.LOGERROR)
         pass
-    executebuiltin(f"Notification({__name__},{__language__(32004)}")
+    xbmc.executebuiltin(f"Notification({__name__},{__language__(32004)}")
