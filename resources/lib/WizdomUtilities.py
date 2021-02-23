@@ -4,6 +4,7 @@ import codecs
 import xbmc
 import xbmcvfs
 import xbmcaddon
+import shutil
 import unicodedata
 import urllib.request
 from traceback import format_exc
@@ -49,7 +50,7 @@ def getDomain():
     try:
         url = "https://pastebin.com/raw/1vbRPSGh"
         req = urllib.request.urlopen(url)
-        domain = str(req.read(), 'utf-8')
+        domain = str(req.read(), "utf-8")
         return domain
     except Exception as err:
         log(
@@ -124,7 +125,10 @@ def getParam(name, params):
         paramVal = params[name]
         return unquote_plus(paramVal) if paramVal is not None else paramVal
     except Exception as err:
-        log(f"Caught Exception: error getting parameter [{name}]: {format(err)}", xbmc.LOGERROR)
+        log(
+            f"Caught Exception: error getting parameter [{name}]: {format(err)}",
+            xbmc.LOGERROR,
+        )
         log(format_exc(), xbmc.LOGERROR)
         pass
 

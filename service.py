@@ -259,7 +259,9 @@ if action == "search":
             playerid_query = (
                 '{"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}'
             )
-            playerid = loads(xbmc.executeJSONRPC(playerid_query))["result"][0]["playerid"]
+            playerid = loads(xbmc.executeJSONRPC(playerid_query))["result"][0][
+                "playerid"
+            ]
             imdb_id_query = (
                 '{"jsonrpc": "2.0", "method": "Player.GetItem", "params": {"playerid": '
                 + str(playerid)
@@ -313,13 +315,17 @@ if action == "search":
         # Search Movie by Title+Year
         else:
             try:
-                imdb_id = searchTMDB("movie", query=quote(item["title"]), year=item["year"])
+                imdb_id = searchTMDB(
+                    "movie", query=quote(item["title"]), year=item["year"]
+                )
                 log(f"Search TMDB:{imdb_id}")
                 if not isinstance(imdb_id, str) or not imdb_id[:2] == "tt":
-                    year = (int(item["year"]) - 1) if item["year"] is not None and item["year"].isnumeric() is True else 0
-                    imdb_id = searchTMDB(
-                        "movie", query=quote(item["title"]), year=year
+                    year = (
+                        (int(item["year"]) - 1)
+                        if item["year"] is not None and item["year"].isnumeric() is True
+                        else 0
                     )
+                    imdb_id = searchTMDB("movie", query=quote(item["title"]), year=year)
                     log(f"Search IMDB(2):{imdb_id}")
                 if isinstance(imdb_id, str) and imdb_id[:2] == "tt":
                     searchByIMDB(imdb_id, 0, 0, item["file_original_path"])
