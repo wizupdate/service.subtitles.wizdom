@@ -51,7 +51,7 @@ def download(id):
             subFile.write(f.read())
         xbmc.sleep(500)
 
-    xbmc.executebuiltin(('Extract("%s","%s")' % (archive_file,__tmpfolder__,)).encode('utf-8'), True)
+    xbmc.executebuiltin(('Extract("%s","%s")' % (archive_file,__tmpfolder__)).encode('utf-8').decode(), True)
     for file in xbmcvfs.listdir(archive_file)[1]:
         file = os.path.join(__tmpfolder__, file)
         if os.path.splitext(file)[1] in exts:
