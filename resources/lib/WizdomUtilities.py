@@ -79,7 +79,7 @@ def normalizeString(str):
 
 def cleanFolders(folder):
     try:
-        xbmcvfs.rmtree(folder)
+        shutil.rmtree(folder)
     except Exception as err:
         log(f"Caught Exception: error deleting folders: {format(err)}", xbmc.LOGERROR)
         log(format_exc(), xbmc.LOGERROR)

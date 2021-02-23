@@ -362,7 +362,7 @@ elif action == "download":
 
 elif action == "clean":
     try:
-        xbmcvfs.rmtree(__profile__)
+        shutil.rmtree(__profile__)
     except Exception as err:
         log(f"Caught Exception: deleting tmp dir: {format(err)}", xbmc.LOGERROR)
         log(format_exc(), xbmc.LOGERROR)
