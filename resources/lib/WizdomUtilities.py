@@ -49,7 +49,7 @@ def getDomain():
     try:
         url = "https://pastebin.com/raw/1vbRPSGh"
         req = urllib.request.urlopen(url)
-        domain = str(req.read())
+        domain = str(req.read(), 'utf-8')
         return domain
     except Exception as err:
         log(
