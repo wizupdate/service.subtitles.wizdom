@@ -136,7 +136,7 @@ def cachingJSON(filename, url):
 
 def ManualSearch(title):
     filename = f"wizdom.manual.{normalizeString(title)}.json"
-    url = f"http://json.{myDomain}/search.php?action=guessit&filename={normalizeString(title)}"
+    url = f"http://json.{myDomain}/search.php?action=guessit&filename={quote(normalizeString(title))}"
     log(f"ManualSearch: {url}")
     try:
         json = cachingJSON(filename, url)
