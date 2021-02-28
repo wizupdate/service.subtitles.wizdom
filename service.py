@@ -49,7 +49,7 @@ def download(id):
     if not os.path.exists(archive_file):
         url = f"http://zip.{format(myDomain)}/" + id + ".zip"
         f = urllib.request.urlopen(url)
-        with open(archive_file, "wb") as subFile:
+        with open(archive_file, mode="wb", encoding="utf-8") as subFile:
             subFile.write(f.read().decode('utf-8'))
         xbmc.sleep(500)
 
@@ -124,7 +124,7 @@ def cachingJSON(filename, url):
         f = urllib.request.urlopen(url)
         content = f.read().decode('utf-8')
         print(f"HTTP GET: {url} \n Content: {content.decode()}")
-        with open(json_file, "wb") as subFile:
+        with open(json_file, mode="wb",encoding="utf-8") as subFile:
             subFile.write(content)
             fileExists = True
         return loads(content.decode())
@@ -133,7 +133,7 @@ def cachingJSON(filename, url):
         fileExists = True
 
     if (fileExists):
-        with open(json_file, "r") as json_data:
+        with open(json_file, mode="r", encoding="utf-8") as json_data:
             return load(json_data)
 
     return 0

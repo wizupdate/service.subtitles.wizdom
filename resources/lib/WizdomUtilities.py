@@ -24,7 +24,7 @@ def download(self, ID, dest):
         ]
         result = self.server.DownloadSubtitles(self.osdb_token, down_id)
         if result["data"]:
-            local_file = open(dest, "w" + "b")
+            local_file = open(dest, "w" + "b", encoding="utf-8")
             d = zlib.decompressobj(16 + zlib.MAX_WBITS)
             data = d.decompress(base64.b64decode(result["data"][0]["data"]))
             local_file.write(data)
