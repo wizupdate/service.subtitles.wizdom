@@ -50,7 +50,7 @@ def getDomain():
     try:
         url = "https://pastebin.com/raw/1vbRPSGh"
         req = urllib.request.urlopen(url)
-        domain = str(req.read(), "utf-8")
+        domain = str(req.read().decode('utf-8'), "utf-8")
         return domain
     except Exception as err:
         log(
@@ -64,7 +64,7 @@ def getDomain():
 def convert_to_utf(file):
     try:
         with codecs.open(file, "r", "cp1255") as f:
-            srt_data = f.read()
+            srt_data = f.read().decode('utf-8')
 
         with codecs.open(file, "w", "utf-8") as output:
             output.write(srt_data)
@@ -102,7 +102,7 @@ def uploadAP(params):
         try:
             url = f'http://subs.vpnmate.com/webupload.php?status=1&imdb={getParam("imdb", params)}&season={getParam("season", params)}&episode={getParam("episode", params)}'
             req = urllib.request.urlopen(url)
-            ap_object = loads(req.read())["result"]
+            ap_object = loads(req.read().decode('utf-8'))["result"]
             if ap_object["lang"]["he"] == 0:
                 xbmc.sleep(30 * 1000)
                 i = Dialog().yesno(
@@ -113,7 +113,7 @@ def uploadAP(params):
                 if i == 1:
                     url = f'http://subs.vpnmate.com/webupload.php?upload=1&lang=he&subid={getParam("id", params)}&imdb={getParam("imdb", params)}&season={getParam("season", params)}&episode={getParam("episode", params)}'
                     req = urllib.request.urlopen(url)
-                    ap_upload = loads(url.read())["result"]
+                    ap_upload = loads(url.read().decode('utf-8'))["result"]
                     if "error" in ap_upload:
                         Dialog().ok("Apollo Error", f'{ ap_upload["error"] }')
                     else:

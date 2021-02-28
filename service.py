@@ -50,7 +50,7 @@ def download(id):
         url = f"http://zip.{format(myDomain)}/" + id + ".zip"
         f = urllib.request.urlopen(url)
         with open(archive_file, "wb") as subFile:
-            subFile.write(f.read())
+            subFile.write(f.read().decode('utf-8'))
         xbmc.sleep(500)
 
     xbmc.executebuiltin(('Extract("%s","%s")' % (archive_file,__tmpfolder__)).encode('utf-8').decode(), True)
@@ -102,7 +102,7 @@ def searchTMDB(type, query, year):
     filename = f"wizdom.tmdb.{tmdb_id}.json"
     url = f"http://api.tmdb.org/3/{type}/{tmdb_id}/external_ids?api_key={__tmdbkey__}&language=en"
     req = urllib.request.urlopen(url)
-    json = loads(req.read())
+    json = loads(req.read().decode('utf-8'))
     try:
         imdb_id = json["imdb_id"]
     except Exception:
@@ -122,7 +122,7 @@ def cachingJSON(filename, url):
         or (time() - os.path.getmtime(json_file) > 30 * 60)
     ):
         f = urllib.request.urlopen(url)
-        content = f.read()
+        content = f.read().decode('utf-8')
         print(f"HTTP GET: {url} \n Content: {content.decode()}")
         with open(json_file, "wb") as subFile:
             subFile.write(content)
