@@ -5,8 +5,7 @@ from json import loads, load
 from shutil import rmtree
 from time import time
 from unicodedata import normalize
-from urllib import unquote_plus, unquote, quote
-from urlparse import urlparse
+from urllib.parse import unquote_plus, unquote, quote, urlparse
 from xbmcaddon import Addon
 from xbmcplugin import endOfDirectory, addDirectoryItem
 from xbmcgui import ListItem, Dialog
@@ -16,8 +15,8 @@ from xbmc import translatePath, executebuiltin, getInfoLabel, executeJSONRPC, Pl
 myAddon = Addon()
 myScriptID = myAddon.getAddonInfo('id')
 myVersion = myAddon.getAddonInfo('version')
-myTmp = translatePath(myAddon.getAddonInfo('profile')).encode('utf-8')
-mySubFolder = translatePath(path.join(myTmp, 'subs')).encode('utf-8')
+myTmp = translatePath(myAddon.getAddonInfo('profile'))
+mySubFolder = translatePath(path.join(myTmp, 'subs'))
 myName = myAddon.getAddonInfo('name')
 myLang = myAddon.getLocalizedString
 
@@ -44,7 +43,7 @@ def convert_to_utf(file):
 
 
 def lowercase_with_underscores(str):
-	return normalize('NFKD', unicode(unicode(str, 'utf-8'))).encode('utf-8', 'ignore')
+	return normalize('NFKD', str)
 
 
 def download(id):
@@ -60,13 +59,11 @@ def download(id):
 	if not path.exists(archive_file):
 		data = get("http://zip.%s/"%format(myDomain)+id+".zip")
 		open(archive_file, 'wb').write(data.content)
-	executebuiltin(('XBMC.Extract("%s","%s")' % (archive_file, mySubFolder)).encode('utf-8'), True)
+	executebuiltin(('Extract("%s","%s")' % (archive_file, mySubFolder)).encode('utf-8').decode(), True)
 	for file_ in listdir(mySubFolder)[1]:
-		ufile = file_.decode('utf-8')
-		file_ = path.join(mySubFolder, ufile)
-		if path.splitext(ufile)[1] in exts:
-			convert_to_utf(file_)
-			subtitle_list.append(file_)
+		file = path.join(mySubFolder, file_)
+		if path.splitext(file)[1] in exts:
+			subtitle_list.append(file)
 	return subtitle_list
 
 def getParams(arg):
@@ -104,8 +101,9 @@ def searchByIMDB(imdb, season=0, episode=0, version=0):
 	subs_rate = []  # TODO remove not in used
 	if json != 0:
 		for item_data in json:
-			listitem = ListItem(label="Hebrew", label2=item_data["versioname"],
-								thumbnailImage="he", iconImage="%s" % (item_data["score"]/2))
+			listitem = ListItem(label="Hebrew", label2=item_data["versioname"])
+			listitem.setArt({'thumb': 'he'})
+			#listitem.setArt({'iconImage' : "%s" % (item_data["score"]/2) })
 			if int(item_data["score"]) > 8:
 				listitem.setProperty("sync", "true")
 			url = "plugin://%s/?action=download&versioname=%s&id=%s&imdb=%s&season=%s&episode=%s" % (
@@ -116,7 +114,7 @@ def searchByIMDB(imdb, season=0, episode=0, version=0):
 def searchTMDB(type, query, year):
 	tmdbKey = '653bb8af90162bd98fc7ee32bcbbfb3d'
 	filename = 'wizdom.search.tmdb.%s.%s.%s.json' % (type,lowercase_with_underscores(query), year)
-	if year > 0:
+	if int(year) > 0:
 		url = "http://api.tmdb.org/3/search/%s?api_key=%s&query=%s&year=%s&language=en" % (
 			type,tmdbKey, query, year)
 	else:
@@ -166,21 +164,21 @@ def ManualSearch(title):
 		if json["type"] == "episode":
 			imdb_id = searchTMDB("tv",str(json['title']), 0)
 			if imdb_id:
-				searchByIMDB(str(imdb_id), 0, 0, lowercase_with_underscores(title))
+				searchByIMDB(str(imdb_id), json['season'], json['episode'])    ##### burekas fix
 		elif json["type"] == "movie":
 			if "year" in json:
 				imdb_id = searchTMDB("movie",str(json['title']), json['year'])
 			else:
 				imdb_id = searchTMDB("movie",str(json['title']), 0)
 			if imdb_id:
-				searchByIMDB(str(imdb_id), 0, 0, lowercase_with_underscores(title))
+				searchByIMDB(str(imdb_id), 0, 0)    ##### burekas fix
 	except Exception as err:
 		wlog('Caught Exception: error in manual search: %s' % format(err))
 		pass
 
 
 def wlog(msg):
-	log((u"##**## [%s] %s" % ("Wizdom Subs", msg,)).encode('utf-8'), level=xbmc.LOGDEBUG)
+	log((u"##**## [%s] %s" % ("Wizdom Subs", msg)), level=xbmc.LOGDEBUG)
 
 
 # ---- main -----
@@ -203,10 +201,10 @@ if action == 'search':
 		item['year'] = getInfoLabel("VideoPlayer.Year")  # Year
 
 		item['season'] = str(getInfoLabel("VideoPlayer.Season"))  # Season
-		if item['season'] == '' or item['season'] < 1:
+		if item['season'] == '' or int(item['season']) < 1:
 			item['season'] = 0
 		item['episode'] = str(getInfoLabel("VideoPlayer.Episode"))  # Episode
-		if item['episode'] == '' or item['episode'] < 1:
+		if item['episode'] == '' or int(item['episode']) < 1:
 			item['episode'] = 0
 
 		if item['episode'] == 0:
@@ -215,7 +213,7 @@ if action == 'search':
 			item['title'] = lowercase_with_underscores(getInfoLabel("VideoPlayer.TVshowtitle"))  # Show
 		if item['title'] == "":
 			item['title'] = lowercase_with_underscores(getInfoLabel("VideoPlayer.OriginalTitle"))  # try to get original title
-		item['file_original_path'] = unquote(unicode(Player().getPlayingFile(), 'utf-8'))  # Full path of a playing file
+		item['file_original_path'] = unquote(Player().getPlayingFile())  # Full path of a playing file
 		item['file_original_path'] = item['file_original_path'].split("?")
 		item['file_original_path'] = path.basename(item['file_original_path'][0])[:-4]
 		
@@ -342,4 +340,4 @@ elif action == 'clean':
 	except Exception as err:
 		wlog('Caught Exception: deleting tmp dir: %s' % format(err))
 		pass
-	executebuiltin((u'Notification(%s,%s)' % (myName, myLang(32004))).encode('utf-8'))
+	executebuiltin((u'Notification(%s,%s)' % (myName, myLang(32004))))
