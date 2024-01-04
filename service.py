@@ -5,19 +5,18 @@ from json import loads, load
 from shutil import rmtree
 from time import time
 from unicodedata import normalize
-from urllib import unquote_plus, unquote, quote
-from urlparse import urlparse
+from urllib.parse import unquote_plus, unquote, quote, urlparse
 from xbmcaddon import Addon
 from xbmcplugin import endOfDirectory, addDirectoryItem
 from xbmcgui import ListItem, Dialog
-from xbmcvfs import listdir, exists, mkdirs
-from xbmc import translatePath, executebuiltin, getInfoLabel, executeJSONRPC, Player, log, getCondVisibility
+from xbmcvfs import listdir, exists, mkdirs, translatePath
+from xbmc import executebuiltin, getInfoLabel, executeJSONRPC, Player, log, getCondVisibility
 
 myAddon = Addon()
 myScriptID = myAddon.getAddonInfo('id')
 myVersion = myAddon.getAddonInfo('version')
-myTmp = translatePath(myAddon.getAddonInfo('profile')).encode('utf-8')
-mySubFolder = translatePath(path.join(myTmp, 'subs')).encode('utf-8')
+myTmp = translatePath(myAddon.getAddonInfo('profile'))
+mySubFolder = translatePath(path.join(myTmp, 'subs'))
 myName = myAddon.getAddonInfo('name')
 myLang = myAddon.getLocalizedString
 
@@ -27,9 +26,9 @@ def getDomain():
 		return myDomain
 	except Exception as err:
 		wlog('Caught Exception: error in finding getDomain: %s' % format(err))
-		return "lolfw.com"
+		return "wizdom.xyz"
 
-myDomain = getDomain()
+myDomain = getDomain() + "/api"
 
 def convert_to_utf(file):
 	try:
@@ -44,7 +43,7 @@ def convert_to_utf(file):
 
 
 def lowercase_with_underscores(str):
-	return normalize('NFKD', unicode(unicode(str, 'utf-8'))).encode('utf-8', 'ignore')
+	return normalize('NFKD', str)
 
 
 def download(id):
@@ -58,15 +57,13 @@ def download(id):
 	exts = [".srt", ".sub", ".str"]
 	archive_file = path.join(myTmp, 'wizdom.sub.'+id+'.zip')
 	if not path.exists(archive_file):
-		data = get("http://zip.%s/"%format(myDomain)+id+".zip")
+		data = get("http://%s/"%format(myDomain)+"/files/sub/"+id, verify=False)
 		open(archive_file, 'wb').write(data.content)
-	executebuiltin(('XBMC.Extract("%s","%s")' % (archive_file, mySubFolder)).encode('utf-8'), True)
+	executebuiltin(('Extract("%s","%s")' % (archive_file, mySubFolder)).encode('utf-8').decode(), True)
 	for file_ in listdir(mySubFolder)[1]:
-		ufile = file_.decode('utf-8')
-		file_ = path.join(mySubFolder, ufile)
-		if path.splitext(ufile)[1] in exts:
-			convert_to_utf(file_)
-			subtitle_list.append(file_)
+		file = path.join(mySubFolder, file_)
+		if path.splitext(file)[1] in exts:
+			subtitle_list.append(file)
 	return subtitle_list
 
 def getParams(arg):
@@ -96,7 +93,7 @@ def getParam(name, params):
 
 def searchByIMDB(imdb, season=0, episode=0, version=0):
 	filename = 'wizdom.imdb.%s.%s.%s.json' % (imdb, season, episode)
-	url = "http://json.%s/search.php?action=by_id&imdb=%s&season=%s&episode=%s&version=%s" % (
+	url = "http://%s/search?action=by_id&imdb=%s&season=%s&episode=%s&version=%s" % (
 		myDomain, imdb, season, episode, version)
 
 	wlog("searchByIMDB:%s" % url)
@@ -104,8 +101,9 @@ def searchByIMDB(imdb, season=0, episode=0, version=0):
 	subs_rate = []  # TODO remove not in used
 	if json != 0:
 		for item_data in json:
-			listitem = ListItem(label="Hebrew", label2=item_data["versioname"],
-								thumbnailImage="he", iconImage="%s" % (item_data["score"]/2))
+			listitem = ListItem(label="Hebrew", label2=item_data["versioname"])
+			listitem.setArt({'thumb': 'he'})
+			#listitem.setArt({'iconImage' : "%s" % (item_data["score"]/2) })
 			if int(item_data["score"]) > 8:
 				listitem.setProperty("sync", "true")
 			url = "plugin://%s/?action=download&versioname=%s&id=%s&imdb=%s&season=%s&episode=%s" % (
@@ -116,7 +114,7 @@ def searchByIMDB(imdb, season=0, episode=0, version=0):
 def searchTMDB(type, query, year):
 	tmdbKey = '653bb8af90162bd98fc7ee32bcbbfb3d'
 	filename = 'wizdom.search.tmdb.%s.%s.%s.json' % (type,lowercase_with_underscores(query), year)
-	if year > 0:
+	if int(year) > 0:
 		url = "http://api.tmdb.org/3/search/%s?api_key=%s&query=%s&year=%s&language=en" % (
 			type,tmdbKey, query, year)
 	else:
@@ -146,7 +144,7 @@ def searchTMDB(type, query, year):
 def cachingJSON(filename, url):
 	json_file = path.join(myTmp, filename)
 	if not path.exists(json_file) or not path.getsize(json_file) > 20 or (time()-path.getmtime(json_file) > 30*60):
-		data = get(url)
+		data = get(url, verify=False)
 		open(json_file, 'wb').write(data.content)
 	if path.exists(json_file) and path.getsize(json_file) > 20:
 		with open(json_file,'r') as json_data:
@@ -158,7 +156,7 @@ def cachingJSON(filename, url):
 
 def ManualSearch(title):
 	filename = "wizdom.manual.%s.json"%lowercase_with_underscores(title)
-	url = "http://json.%s/search.php?action=guessit&filename=%s" % (
+	url = "http://%s/search?action=guessit&filename=%s" % (
 		myDomain, lowercase_with_underscores(title))
 	wlog("ManualSearch:%s" % url)
 	try:
@@ -180,7 +178,7 @@ def ManualSearch(title):
 
 
 def wlog(msg):
-	log((u"##**## [%s] %s" % ("Wizdom Subs", msg,)).encode('utf-8'), level=xbmc.LOGDEBUG)
+	log((u"##**## [%s] %s" % ("Wizdom Subs", msg)), level=xbmc.LOGDEBUG)
 
 
 # ---- main -----
@@ -203,10 +201,10 @@ if action == 'search':
 		item['year'] = getInfoLabel("VideoPlayer.Year")  # Year
 
 		item['season'] = str(getInfoLabel("VideoPlayer.Season"))  # Season
-		if item['season'] == '' or item['season'] < 1:
+		if item['season'] == '' or int(item['season']) < 1:
 			item['season'] = 0
 		item['episode'] = str(getInfoLabel("VideoPlayer.Episode"))  # Episode
-		if item['episode'] == '' or item['episode'] < 1:
+		if item['episode'] == '' or int(item['episode']) < 1:
 			item['episode'] = 0
 
 		if item['episode'] == 0:
@@ -215,7 +213,7 @@ if action == 'search':
 			item['title'] = lowercase_with_underscores(getInfoLabel("VideoPlayer.TVshowtitle"))  # Show
 		if item['title'] == "":
 			item['title'] = lowercase_with_underscores(getInfoLabel("VideoPlayer.OriginalTitle"))  # try to get original title
-		item['file_original_path'] = unquote(unicode(Player().getPlayingFile(), 'utf-8'))  # Full path of a playing file
+		item['file_original_path'] = unquote(Player().getPlayingFile())  # Full path of a playing file
 		item['file_original_path'] = item['file_original_path'].split("?")
 		item['file_original_path'] = path.basename(item['file_original_path'][0])[:-4]
 		
@@ -293,9 +291,9 @@ if action == 'search':
 	endOfDirectory(int(sys.argv[1]))
 	if myAddon.getSetting("Debug") == "true":
 		if imdb_id[:2] == "tt":
-			Dialog().ok("Debug "+myVersion, str(item), "imdb: "+str(imdb_id))
+			Dialog().ok("Debug "+myVersion, str(item)+" imdb: "+str(imdb_id))
 		else:
-			Dialog().ok("Debug "+myVersion, str(item), "NO IDS")
+			Dialog().ok("Debug "+myVersion, str(item)+" NO IDS")
 
 elif action == 'manualsearch':
 	searchstring = getParam("searchstring", params)
@@ -314,20 +312,21 @@ elif action == 'download':
 
 	# Upload AP
 	try:
-		if urlparse(Player().getPlayingFile()).hostname[-11:]=="tv4.live":
+		if urlparse(Player().getPlayingFile()).hostname[-11:]=="tvnow.best":
 			Ap = 1
 	except:
 		pass
 
 	if Ap==1 and myAddon.getSetting("uploadAP") == "true":
 		try:
-			response = get("https://subs2.apollogroup.tv/kodi.upload.php?status=1&imdb=%s&season=%s&episode=%s"%(getParam("imdb", params),getParam("season", params),getParam("episode", params)))
+			response = get("https://subs2.apollogroup.tv/kodi.upload.php?status=1&imdb=%s&season=%s&episode=%s"%(getParam("imdb", params),getParam("season", params),getParam("episode", params)),verify=False)
 			ap_object = loads(response.text)["result"]
+			
 			if "Hebrew" not in ap_object["lang"]:
 				xbmc.sleep(30*1000)
-				i = Dialog().yesno("Apollo Upload Subtitle","Media version %s"%ap_object["version"],"This subtitle is 100% sync and match?")
+				i = Dialog().yesno("Apollo Upload Subtitle","Media version %s"%ap_object["version"]+" This subtitle is 100% sync and match?")
 				if i == 1:
-					response = get("https://subs2.apollogroup.tv/kodi.upload.php?upload=1&lang=he&subid=%s&imdb=%s&season=%s&episode=%s"%(getParam("id", params),getParam("imdb", params),getParam("season", params),getParam("episode", params)))
+					response = get("https://subs2.apollogroup.tv/kodi.upload.php?upload=1&lang=he&subid=%s&imdb=%s&season=%s&episode=%s"%(getParam("id", params),getParam("imdb", params),getParam("season", params),getParam("episode", params)),verify=False)
 					ap_upload = loads(response.text)["result"]
 					if "error" in ap_upload:
 						Dialog().ok("Apollo Error","%s"%ap_upload["error"])
@@ -342,4 +341,4 @@ elif action == 'clean':
 	except Exception as err:
 		wlog('Caught Exception: deleting tmp dir: %s' % format(err))
 		pass
-	executebuiltin((u'Notification(%s,%s)' % (myName, myLang(32004))).encode('utf-8'))
+	executebuiltin((u'Notification(%s,%s)' % (myName, myLang(32004))))
